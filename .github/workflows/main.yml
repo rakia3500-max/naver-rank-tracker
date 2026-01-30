@@ -1,21 +1,38 @@
 name: Daily-Crawl
 on:
   schedule:
-    - cron: '0 18 * * *' # 한국 시간 매일 새벽 3시 실행
-  workflow_dispatch: # 수동 실행 버튼
+    - cron: '0 18 * * *' # 한국 시간 새벽 3시 실행
+  workflow_dispatch: # 수동 실행 버튼 활성화
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - install python: uses: actions/setup-python@v4
-        with: {python-version: '3.9'}
-      - run: pip install -r requirements.txt
-      - run: python collector.py
-      - name: commit and push
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
         run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@github.com"
+          pip install requests pandas streamlit plotly
+
+      - name: Run crawler
+        run: python collector.py
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+          DEFAULT_KEYWORDS: ${{ secrets.DEFAULT_KEYWORDS }}
+          MY_BRAND_1: ${{ secrets.MY_BRAND_1 }}
+          MY_BRAND_2: ${{ secrets.MY_BRAND_2 }}
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add tracking_log.csv
-          git commit -m "update data" || exit 0
+          git commit -m "update ranking: $(date +'%Y-%m-%d')" || exit 0
           git push
