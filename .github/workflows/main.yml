@@ -1,0 +1,21 @@
+name: Daily-Crawl
+on:
+  schedule:
+    - cron: '0 18 * * *' # 한국 시간 매일 새벽 3시 실행
+  workflow_dispatch: # 수동 실행 버튼
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - install python: uses: actions/setup-python@v4
+        with: {python-version: '3.9'}
+      - run: pip install -r requirements.txt
+      - run: python collector.py
+      - name: commit and push
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@github.com"
+          git add tracking_log.csv
+          git commit -m "update data" || exit 0
+          git push
